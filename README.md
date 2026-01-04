@@ -20,7 +20,11 @@ This project was created to gain a deeper, hands-on understanding of:
   
 
 ## Planned Features
-- Builtin commands (`cd`,`exit`)
+- Builtin commands
+  - exit
+  - cd
+  - pwd
+  - echo
 - Command Chaining
 
 ## Docs
