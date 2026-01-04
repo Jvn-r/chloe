@@ -15,7 +15,9 @@ This project was created to gain a deeper, hands-on understanding of:
 - Taking user input using `fgets` and handling newline char left behind by `fgets`
 - Tokenization of input into `argv` argument array
 - Process creation using `CreateProcessA`
-- Process synchronization and handle cleanup
+- Differenciation from user input variable and tokenized variable
+- `exit` will exit
+  
 
 ## Planned Features
 - Builtin commands (`cd`,`exit`)
