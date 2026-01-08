@@ -59,6 +59,15 @@ void tokenizer(char *buffer, char *argv[]){
 }
 
 int inb_echo(char *argv[]) {
+    int i = 1;
+    while(argv[i] != NULL){
+        if(i==1)
+            printf("%s",argv[i]);
+        else
+            printf(" %s",argv[i]);
+        i++;
+    }
+    printf("\n");
     return 1;
 }
 
