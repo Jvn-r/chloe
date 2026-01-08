@@ -58,6 +58,39 @@ void tokenizer(char *buffer, char *argv[]){
     //printf("TOK BUFFEEr %s\n",buffer);
 }
 
+int inb_echo(char *argv[]) {
+    return 1;
+}
+
+int inb_cd(char *argv[]) {
+    return 1;
+}
+
+int inb_pwd(char *argv[]) {
+    return 1;
+}
+
+int inb_exit(char *argv[]){
+    return -1;
+}
+
+struct inb{
+    char *name;
+    int (*fn_name)(char *argv[]);
+};
+
+int in_built_check(char *argv[]){
+    struct inb InBUILTS[4] = {{"echo", inb_echo}, {"cd", inb_cd}, {"exit",inb_exit}, {"pwd",inb_pwd}};
+    int i;
+    int count = sizeof(InBUILTS) / sizeof(InBUILTS[0]);
+    for(i=0; i<count;i++){
+        if(strcmp(argv[0],InBUILTS[i].name)==0){
+            return InBUILTS[i].fn_name(argv);
+        }
+    }
+    return 0;
+}
+
 int main(void){
     char gonk[100];
     char *argv[50];
@@ -72,8 +105,14 @@ int main(void){
         //printf("TOK %s\n",gonk);
         if(argv[0] == NULL)
             continue;
-        if(strcmp(argv[0],"exit") == 0)
+
+        int inb_stat = in_built_check(argv);
+        if(inb_stat == -1)
             break;
+        if(inb_stat == 1){
+            printf("in built wokd\n");
+            continue;
+        }
         create_proc(raw_cmd);
     }
 }
