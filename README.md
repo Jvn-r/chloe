@@ -17,6 +17,7 @@ This project was created to gain a deeper, hands-on understanding of:
 - Process creation using `CreateProcessA`
 - Differenciation from user input variable and tokenized variable
 - `exit` will exit
+- in built funcs will be handled seperately
   
 
 ## Planned Features
