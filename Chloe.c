@@ -76,6 +76,17 @@ int inb_cd(char *argv[]) {
 }
 
 int inb_pwd(char *argv[]) {
+    int size = GetCurrentDirectory(0, NULL);
+    char *buffer;
+    if (size == 0){
+        printf("error");
+        return 1;
+    }
+    else
+        buffer = malloc(size);
+    GetCurrentDirectory(size,buffer);
+    printf("%s\n",buffer);
+    free(buffer);
     return 1;
 }
 
