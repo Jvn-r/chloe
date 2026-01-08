@@ -19,6 +19,7 @@ This project was created to gain a deeper, hands-on understanding of:
 - `exit` will exit
 - in built funcs will be handled seperately
 - `echo` command function added
+- `pwd` will print working directory
 
 ## Planned Features
 - Builtin commands
