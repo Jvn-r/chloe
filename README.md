@@ -20,6 +20,7 @@ This project was created to gain a deeper, hands-on understanding of:
 - in built funcs will be handled seperately
 - `echo` command function added
 - `pwd` will print working directory
+- `cd` will change directory now
 
 ## Planned Features
 - Builtin commands
@@ -28,6 +29,8 @@ This project was created to gain a deeper, hands-on understanding of:
   - pwd
   - echo
 - Command Chaining
+- Better error management
+- Pipes
 
 ## Docs
 - Heavily processed implementation notes in `docs` 
