@@ -21,6 +21,7 @@ This project was created to gain a deeper, hands-on understanding of:
 - `echo` command function added
 - `pwd` will print working directory
 - `cd` will change directory now
+- new better revamped upgraded have i said new Tokenizer - lexical char by char tok instead of `strtok`
 
 ## Planned Features
 - Builtin commands
