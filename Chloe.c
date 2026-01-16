@@ -243,7 +243,7 @@ int main(void){
         strcpy(raw_cmd,gonk);
         tokenizer(gonk);
         argv_builder(argv);
-        command_builder(argv);
+        //command_builder(argv);
         inp_health =  is_input_good(TOKENS);
         if(inp_health == -1){
             printf("syntax error\n");
