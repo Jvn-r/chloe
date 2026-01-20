@@ -4,6 +4,12 @@
 #include<stdlib.h>
 #include<stdbool.h>
 
+#define OP_SEMI 0
+#define OP_AND  1
+#define OP_OR   2
+#define OP_PIPE 3
+#define NOT_A_BUILTIN 195
+
 int create_proc(char *argv[]){
     DWORD exit_code = 1;
     STARTUPINFO si;
@@ -47,10 +53,6 @@ struct TOK_OPS{
 };
 
 struct TOK_OPS operators[4] = {{";"}, {"&&"}, {"||"}, {"|"}};
-#define OP_SEMI 0
-#define OP_AND  1
-#define OP_OR   2
-#define OP_PIPE 3
 
 typedef enum{
     TOK_WORD,
@@ -268,7 +270,6 @@ struct command{
 int command_builder(struct command *cmds){
     int cmd_i = 0;
     int argv_j = 0;
-    int used_cmds;
 
     for(int i = 0; i<used_tokens; i++){
         if(TOKENS[i].type == TOK_WORD){
@@ -283,54 +284,9 @@ int command_builder(struct command *cmds){
     }
     cmds[cmd_i].argv[argv_j] = NULL;
     cmds[cmd_i].next_op_idx = -1;
-    used_cmds = cmd_i + 1;
-    return used_cmds;
+    return cmd_i + 1;;
 }
 
-int run_cmd(char *argv[]) {
-    int stat = in_built_check(argv);
-    if (stat == -1)
-        return -1;        
-    if (stat == 1)
-        return 0;        
-
-    return create_proc(argv); 
-}
-
-int executionar(int num_of_commds, struct command *cmds){
-    int stat;
-    for(int i=0; i<num_of_commds; i++){
-        stat = run_cmd(cmds[i].argv);
-        if(stat == -1)
-            return -1;
-
-        if (cmds[i].next_op_idx == -1)
-            continue;
-        if(cmds[i].next_op_idx == OP_SEMI)
-            continue;
-        if (cmds[i].next_op_idx == OP_AND && stat != 0)
-            break;
-        if (cmds[i].next_op_idx == OP_OR && stat == 0)
-            break;
-    }
-    return 0;
-}
-
-/*void old_tokenizer(char *buffer, char *argv[]){    
-    int i = 0;
-    char *tok;
-    tok = strtok(buffer, " ");
-
-    while(tok != NULL){
-        argv[i] = tok;
-        tok = strtok(NULL," ");
-        i++;
-        if(i == 49)
-            break;
-    }
-    argv[i] = NULL;
-}
-*/
 int inb_echo(char *argv[]) {
     int i = 1;
     while(argv[i] != NULL){
@@ -341,7 +297,7 @@ int inb_echo(char *argv[]) {
         i++;
     }
     printf("\n");
-    return 1;
+    return 0;
 }
 
 int inb_pwd(char *argv[]) {
@@ -356,7 +312,7 @@ int inb_pwd(char *argv[]) {
     GetCurrentDirectory(size,buffer);
     printf("%s\n",buffer);
     free(buffer);
-    return 1;
+    return 0;
 }
 
 int inb_cd(char *argv[]) {
@@ -367,7 +323,7 @@ int inb_cd(char *argv[]) {
         x = SetCurrentDirectory(argv[1]);
     
     if (x)
-        return 1;
+        return 0;
     else{
         printf("error\n");
         return 1;
@@ -385,12 +341,40 @@ struct inb{
 
 int in_built_check(char *argv[]){
     struct inb InBUILTS[4] = {{"echo", inb_echo}, {"cd", inb_cd}, {"exit",inb_exit}, {"pwd",inb_pwd}};
-    int i;
     int count = sizeof(InBUILTS) / sizeof(InBUILTS[0]);
-    for(i=0; i<count;i++){
+    for(int i=0; i<count;i++){
         if(strcmp(argv[0],InBUILTS[i].name)==0){
             return InBUILTS[i].fn_name(argv);
         }
+    }   
+    return 195;
+}
+
+int run_cmd(char *argv[]) {
+    int stat = in_built_check(argv);
+    if (stat == -1)
+        return -1;        
+    if (stat != NOT_A_BUILTIN)
+        return stat;        
+
+    return create_proc(argv); 
+}
+
+int executionar(int num_of_commds, struct command *cmds){
+    int stat;
+    for(int i=0; i<num_of_commds; i++){
+        stat = run_cmd(cmds[i].argv);
+        if(stat == -1)
+            return -1;
+
+        if(cmds[i].next_op_idx == -1)
+            continue;
+        if(cmds[i].next_op_idx == OP_SEMI)
+            continue;
+        if (cmds[i].next_op_idx == OP_AND && stat != 0)
+            break;
+        if (cmds[i].next_op_idx == OP_OR && stat == 0)
+            break;
     }
     return 0;
 }
@@ -427,7 +411,7 @@ int main(void){
                 continue;
             if(inb_stat == -1)
                 break;
-            if(inb_stat == 1){
+            if(inb_stat == 0){
                 printf("in built wokd\n");
                 continue;
             }

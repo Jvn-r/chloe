@@ -25,6 +25,9 @@ This project was created to gain a deeper, hands-on understanding of:
 - a command builder and executionar handle command building and executioning instead of argv and raw input line
 - "improvements" to understanding of tokenizer function
 - rebuilding command input in `create_proc` fn
+- exit codes in `create_proc`
+- operators `;`,`&&`,`||` all work as intended
+- standardized return codes `0 = success and non zero = failure` 
 
 ## Planned Features
 - Builtin commands
