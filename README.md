@@ -22,6 +22,9 @@ This project was created to gain a deeper, hands-on understanding of:
 - `pwd` will print working directory
 - `cd` will change directory now
 - new better revamped upgraded have i said new Tokenizer - lexical char by char tok instead of `strtok`
+- a command builder and executionar handle command building and executioning instead of argv and raw input line
+- "improvements" to understanding of tokenizer function
+- rebuilding command input in `create_proc` fn
 
 ## Planned Features
 - Builtin commands
@@ -35,3 +38,6 @@ This project was created to gain a deeper, hands-on understanding of:
 
 ## Docs
 - Heavily processed implementation notes in `docs` 
+
+## BUGS
+- `echo hello;pwd` will not work, `echo hello ;pwd` or anything with a space behind the operator works, will fix it in the near future
