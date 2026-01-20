@@ -185,9 +185,18 @@ void tokenizer(char *buffer){
             printf("\n TONE OF THESE SHOULD BE NULL %c, %c \n",buffer[cur_ind], buffer[cur_ind+1]);
             //if(buffer[cur_ind] != '\0')
             //    buffer[cur_ind] = '\0';
+            //---
+            int len = cur_ind - p;
+            char *word = malloc(len + 1);
+            if (!word) {
+                perror("malloc aaaaaaaaaa");
+                exit(1);
+            }
+            memcpy(word, &buffer[p], len);
+            word[len] = '\0';
             
-            // SUMN WRONG HERE IDK, LIKE ON PAPER I SAVE CHAR IN OTHER VAR SET IT AS NULL SEND IT TO TOKEN AND REPLACE THE SAVED VAR, SO WHY DOES IT NOT WORK
-            TOKENS[i].tok_word = &buffer[p];
+            TOKENS[i].tok_word = word;
+            //---
             TOKENS[i].type = TOK_WORD;
             TOKENS[i].op_index = -1;
             i++;
@@ -212,6 +221,15 @@ void tokenizer(char *buffer){
         } 
     }
     used_tokens = i;
+}
+
+void free_tokens() {
+    for (int i = 0; i < used_tokens; i++) {
+        if (TOKENS[i].type == TOK_WORD && TOKENS[i].tok_word) {
+            free(TOKENS[i].tok_word);
+            TOKENS[i].tok_word = NULL;
+        }
+    }
 }
 
 int is_input_good(){
@@ -404,6 +422,7 @@ int main(void){
         else {
             n_o_cmd = command_builder(cmds);
             int inb_stat = executionar(n_o_cmd, cmds);
+            free_tokens(); 
             if(used_tokens < 1)
                 continue;
             if(inb_stat == -1)

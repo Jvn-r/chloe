@@ -40,4 +40,4 @@ This project was created to gain a deeper, hands-on understanding of:
 - Heavily processed implementation notes in `docs` 
 
 ## BUGS
-- `echo hello;pwd` will not work, `echo hello ;pwd` or anything with a space behind the operator works, will fix it in the near future
+- FIXED : `echo hello;pwd` will not work, `echo hello ;pwd` or anything with a space behind the operator works, will fix it in the near future
