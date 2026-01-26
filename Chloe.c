@@ -26,7 +26,6 @@ int create_proc(char *argv[]){
         if (argv[i + 1])
             strcat(cmd_line, " ");
     }
-    printf("\n FINAL cEAT PRIRND STRING  =  %s \n" , cmd_line);
     if (CreateProcessA(NULL,cmd_line,NULL,NULL,FALSE,0,NULL,NULL,&si,&pi)){
         WaitForSingleObject(pi.hProcess,INFINITE);
         GetExitCodeProcess(pi.hProcess, &exit_code);
@@ -34,7 +33,7 @@ int create_proc(char *argv[]){
         CloseHandle(pi.hThread);
     }
     else{
-        printf("Iss not done");
+        printf("command doesnt exist");
     }
     return exit_code;
 }
@@ -71,7 +70,6 @@ int used_tokens;
 int is_op(char x){
     for(int i=0 ; i<4 ; i++){
         if (x == operators[i].tok_op[0]){
-            printf(" from is_op START OF OPERAOTN = %c\n",operators[i].tok_op[0]);
             return 1;
         }
     }
@@ -100,16 +98,13 @@ void tokenizer(char *buffer){
         TOKENS[i].op_index = -1;
     }
     used_tokens = 0;
-    printf("\nTKONATOR\n");
     char cur_char, next_char;
-    char *cur_word;
-    int i = 0, cur_ind, start, x;
+    int i = 0, cur_ind, x;
     int sze = strlen(buffer);
 
     for(int p = 0 ; p < sze ; p++){
-        printf("ITERATION %d\n",p);
         cur_char = buffer[p];
-        printf(" cur char = %c ---", cur_char);
+
         if(cur_char == '\0')
             break;
 
@@ -117,19 +112,11 @@ void tokenizer(char *buffer){
             next_char = buffer[p+1];
         else 
             next_char = '\0';
-
-        printf(" next char = %c ---",next_char);
-
         x = ope(cur_char, next_char);
-
-        printf(" \n output of ope(%c,%c) is %d \n", cur_char, next_char, x);
 
         if (cur_char == ' ')//whitespace eater
             continue;
         else if(x != -1){ //operator gurgler
-
-            printf("\nENTERING OPE GURGUELS\n");
-            printf(" buffer[%d] = %c ", p,buffer[p]);
             TOKENS[i].op_index = x;
             TOKENS[i].type = TOK_OPERATOR;
             TOKENS[i].tok_word = NULL;
@@ -137,63 +124,39 @@ void tokenizer(char *buffer){
             if(TOKENS[i].type == TOK_OPERATOR && operators[TOKENS[i].op_index].tok_op[1] != '\0')
                 p++;
             i++;
-            printf("I = %d\n", i);
-            printf("P = %d\n", p);
         }  
         else{ 
-            printf(" \n WORD WORD WOKD \n");
-            printf(" the index is at %d \n" , p);
             cur_ind = p;
 
-            int iter = 0;
-
             while(true){
-
-                printf("in while loop iteration %d \n",iter);
-                iter ++;
                 if (buffer[cur_ind] == '\0' || buffer[cur_ind] == ' ') 
                     break;
-                
                 if (is_op(buffer[cur_ind])) 
                     break;
-                
                 if (buffer[cur_ind + 1] != '\0' && ope(buffer[cur_ind], buffer[cur_ind + 1]) != -1) 
                     break;
-                
-                printf("CURRENT INDEX VAR = %d\n", cur_ind);
                 cur_ind++;
-                
             }
-            printf("buffer[%d] is  = %c ", cur_ind, buffer[cur_ind]);
             
             int cur_chr_stat = is_op(buffer[cur_ind]);
             char saved_o = '\0', saved_c = '\0';
             if(cur_chr_stat == 1){
-                printf("AAAAAAAA buff[cur_index = %d] = %c \n", cur_ind, buffer[cur_ind]);
                 saved_o = buffer[cur_ind];
-                printf(" OP saved = %c \n", saved_o);
                 buffer[cur_ind] = '\0';
-            }else if(buffer[cur_ind] == '\0'){
-                printf("NULL HCHCHCHC \n");
-            }else if(buffer[cur_ind] == ' '){
+            }else if(buffer[cur_ind] == '\0')
+                {}
+            else if(buffer[cur_ind] == ' '){
                 buffer[cur_ind] = '\0';
-                printf("\nWHITSTSTSTS %c ", buffer[cur_ind]);
             }else{
-                printf("AAAAAAAA THE BUFFER AT CUR_IND IS A LETTER = %c\n", buffer[cur_ind]);
                 saved_c = buffer[cur_ind+1];
-                printf("CHAR SAVED = %c\n", saved_c);
                 buffer[cur_ind+1] = '\0';
             }
-            printf("\n TONE OF THESE SHOULD BE NULL %c, %c \n",buffer[cur_ind], buffer[cur_ind+1]);
-            //if(buffer[cur_ind] != '\0')
-            //    buffer[cur_ind] = '\0';
-            //---
+
             int len = cur_ind - p;
             char *word = malloc(len + 1);
-            if (!word) {
-                perror("malloc aaaaaaaaaa");
+            if (!word)
                 exit(1);
-            }
+
             memcpy(word, &buffer[p], len);
             word[len] = '\0';
             
@@ -208,18 +171,13 @@ void tokenizer(char *buffer){
             else if(saved_c != '\0')
                 buffer[cur_ind+1] = saved_c;
             else
-                printf("\nITS WHITESPCEA AND IT SHOULD BE FINEEE\n");
-
-            printf(" the index AT THE END is at %d \n" , p);
+                {}
             if(buffer[cur_ind] == ' ' || buffer[cur_ind] == '\0'){
                 p = cur_ind;
-                printf("\n buff at cur ind is WHITESPACE or NULL char so p = cur index = %d", p);
             }
             else{
                 p = cur_ind-1;
-                printf("\n buff at cur ind is NOT NOT NOT A WHITESPACE or NULL char so p = cur index -1 = %d", p);
-            }
-            printf(" p AFTR p=cur_ind IS  %d \n" , p);
+                }
         } 
     }
     used_tokens = i;
@@ -250,16 +208,6 @@ int is_input_good(){
     }
 
     return 1;
-}
-
-void argv_builder(char *argv[]){
-    int j=0;
-    for(int i=0 ; i<used_tokens ; i++){
-        if(TOKENS[i].type == TOK_OPERATOR)
-            break;
-        argv[j++] = TOKENS[i].tok_word;
-    }
-    argv[j] = NULL;
 }
 
 struct command{
@@ -330,6 +278,19 @@ int inb_cd(char *argv[]) {
     }
 }
 
+int inb_hello(char *argv[]){
+    printf("Hallo! This is Chloe, a custom Windows terminal\n Do help for list of in built functions\n");
+    return 0;
+}
+
+int inb_ver(char *argv[]){
+    char cur_ver[] = "v0.1";
+    printf("Chloe-%s\n",cur_ver);
+    return 0;
+}
+
+int inb_help(char *argv[]);
+
 int inb_exit(char *argv[]){
     return -1;
 }
@@ -338,9 +299,17 @@ struct inb{
     char *name;
     int (*fn_name)(char *argv[]);
 };
+struct inb InBUILTS[] = {{"echo", inb_echo}, {"cd", inb_cd}, {"exit",inb_exit}, {"pwd",inb_pwd},{"ver",inb_ver},{"hello",inb_hello},{"help",inb_help}};
+
+int inb_help(char *argv[]){
+    int size = sizeof(InBUILTS) / sizeof(InBUILTS[0]);
+    printf("Listing %d in built fucntions\n", size);
+    for(int i=0; i<size ; i++){
+        printf("%s\n", InBUILTS[i].name);
+    }
+}
 
 int in_built_check(char *argv[]){
-    struct inb InBUILTS[4] = {{"echo", inb_echo}, {"cd", inb_cd}, {"exit",inb_exit}, {"pwd",inb_pwd}};
     int count = sizeof(InBUILTS) / sizeof(InBUILTS[0]);
     for(int i=0; i<count;i++){
         if(strcmp(argv[0],InBUILTS[i].name)==0){
@@ -381,7 +350,6 @@ int executionar(int num_of_commds, struct command *cmds){
 
 int main(void){
     char gonk[100];
-    char *argv[50];
     char raw_cmd[100];
     int inp_health, n_o_cmd;
     struct command cmds[10];
@@ -390,14 +358,6 @@ int main(void){
         remove_new_line(gonk);
         strcpy(raw_cmd,gonk);
         tokenizer(gonk);
-
-        for(int i = 0; i < used_tokens; i++){
-            if(TOKENS[i].type == TOK_WORD)
-                printf("Token %d: WORD '%s'\n", i, TOKENS[i].tok_word);
-            else
-                printf("Token %d: OPERATOR %d\n", i, TOKENS[i].op_index);
-        }
-
         inp_health =  is_input_good();
         if(inp_health == -1){
             printf("syntax error\n");
@@ -412,7 +372,6 @@ int main(void){
             if(inb_stat == -1)
                 break;
             if(inb_stat == 0){
-                printf("in built wokd\n");
                 continue;
             }
         }

@@ -1,6 +1,6 @@
 # chloe
 
-chloe is my minimal Windows command-line shell written in C, built to learn more about process execution, and command parsing for builtin commands and external commands etc. in C
+chloe is my minimal Windows command-line shell written in C, built to learn more about process execution, and command parsing for builtin commands and external commands and more in C.
 
 Active development happening rn.
 
@@ -28,6 +28,7 @@ This project was created to gain a deeper, hands-on understanding of:
 - exit codes in `create_proc`
 - operators `;`,`&&`,`||` all work as intended
 - standardized return codes `0 = success and non zero = failure` 
+- more in built fns `help`, `hello` and `ver`
 
 ## Planned Features
 - Builtin commands
@@ -38,9 +39,13 @@ This project was created to gain a deeper, hands-on understanding of:
 - Command Chaining
 - Better error management
 - Pipes
+- UI using da Win32 API
 
 ## Docs
 - Heavily processed implementation notes in `docs` 
 
 ## BUGS
 - FIXED : `echo hello;pwd` will not work, `echo hello ;pwd` or anything with a space behind the operator works, will fix it in the near future
+
+## Releases
+- v1.0 : primitive shell, basics only, but it all works
