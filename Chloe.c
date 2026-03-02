@@ -3,6 +3,8 @@
 #include<string.h>
 #include<stdlib.h>
 #include<stdbool.h>
+#include <unistd.h>
+#include <wchar.h>
 
 #define OP_SEMI 0
 #define OP_AND  1
@@ -10,48 +12,43 @@
 #define OP_PIPE 3
 #define NOT_A_BUILTIN 195
 
-int create_proc(char *argv[]){
+int create_proc(wchar_t *argv[]){
     DWORD exit_code = 1;
-    STARTUPINFO si;
+    STARTUPINFOW si;
     ZeroMemory(&si, sizeof(si));
     si.cb = sizeof(si);
     PROCESS_INFORMATION pi;
     ZeroMemory(&pi, sizeof(pi));
     
-    char cmd_line[500] = {0};
+    wchar_t cmd_line[500] = {0};
     int size_of_line;
     for (int i = 0; argv[i]; i++) {
-        size_of_line = sizeof(cmd_line) - strlen(cmd_line) - 1;
-        strncat(cmd_line, argv[i], size_of_line);
+        size_of_line = sizeof(cmd_line) - wcslen(cmd_line) - 1;
+        wcsncat(cmd_line, argv[i], size_of_line);
         if (argv[i + 1])
-            strcat(cmd_line, " ");
+            wcscat(cmd_line, L" ");
     }
-    if (CreateProcessA(NULL,cmd_line,NULL,NULL,FALSE,0,NULL,NULL,&si,&pi)){
+    if (CreateProcessW(NULL,cmd_line,NULL,NULL,FALSE,0,NULL,NULL,&si,&pi)){
         WaitForSingleObject(pi.hProcess,INFINITE);
         GetExitCodeProcess(pi.hProcess, &exit_code);
         CloseHandle(pi.hProcess);
         CloseHandle(pi.hThread);
     }
     else{
-        printf("command doesnt exist");
+        wprintf(L"command doesnt exist");
     }
     return exit_code;
 }
 
-void reading(char *buffer,int size){
-    printf("\n$>");
-    fgets(buffer,size,stdin);
-}
-
-void remove_new_line(char *buffer){
-    buffer[strcspn(buffer,"\n")] = '\0';
+void remove_new_line(wchar_t *buffer){
+    buffer[wcscspn(buffer,L"\n")] = L'\0';
 }
 
 struct TOK_OPS{
-    char *tok_op;
+    wchar_t *tok_op;
 };
 
-struct TOK_OPS operators[4] = {{";"}, {"&&"}, {"||"}, {"|"}};
+struct TOK_OPS operators[4] = {{L";"}, {L"&&"}, {L"||"}, {L"|"}};
 
 typedef enum{
     TOK_WORD,
@@ -59,7 +56,7 @@ typedef enum{
 }TOK_TYPE;
 
 struct tok{
-    char *tok_word;
+    wchar_t *tok_word;
     TOK_TYPE type;
     int op_index; //if tok is not op then op_index = -1
 };
@@ -67,7 +64,7 @@ struct tok{
 struct tok TOKENS[10];
 int used_tokens;
 
-int is_op(char x){
+int is_op(wchar_t x){
     for(int i=0 ; i<4 ; i++){
         if (x == operators[i].tok_op[0]){
             return 1;
@@ -76,7 +73,7 @@ int is_op(char x){
     return 0;
 }
 
-int ope(char one, char two){
+int ope(wchar_t one, wchar_t two){
     int sze = sizeof(operators) / sizeof(operators[0]);
     for(int i = 0 ; i < sze ; i ++){
         if (operators[i].tok_op[1] != '\0'){
@@ -91,7 +88,7 @@ int ope(char one, char two){
     return -1;
 }
 
-void tokenizer(char *buffer){
+void tokenizer(wchar_t *buffer){
     for (int i = 0; i < 10; i++) {
         TOKENS[i].type = TOK_WORD;
         TOKENS[i].tok_word = NULL;
@@ -100,28 +97,28 @@ void tokenizer(char *buffer){
     used_tokens = 0;
     char cur_char, next_char;
     int i = 0, cur_ind, x;
-    int sze = strlen(buffer);
+    size_t sze = wcslen(buffer);
 
     for(int p = 0 ; p < sze ; p++){
         cur_char = buffer[p];
 
-        if(cur_char == '\0')
+        if(cur_char == L'\0')
             break;
 
-        if(buffer[p+1] != '\0')
+        if(buffer[p+1] != L'\0')
             next_char = buffer[p+1];
         else 
-            next_char = '\0';
+            next_char = L'\0';
         x = ope(cur_char, next_char);
 
-        if (cur_char == ' ')//whitespace eater
+        if (cur_char == L' ')//whitespace eater
             continue;
         else if(x != -1){ //operator gurgler
             TOKENS[i].op_index = x;
             TOKENS[i].type = TOK_OPERATOR;
             TOKENS[i].tok_word = NULL;
 
-            if(TOKENS[i].type == TOK_OPERATOR && operators[TOKENS[i].op_index].tok_op[1] != '\0')
+            if(TOKENS[i].type == TOK_OPERATOR && operators[TOKENS[i].op_index].tok_op[1] != L'\0')
                 p++;
             i++;
         }  
@@ -129,50 +126,49 @@ void tokenizer(char *buffer){
             cur_ind = p;
 
             while(true){
-                if (buffer[cur_ind] == '\0' || buffer[cur_ind] == ' ') 
+                if (buffer[cur_ind] == L'\0' || buffer[cur_ind] == L' ') 
                     break;
                 if (is_op(buffer[cur_ind])) 
                     break;
-                if (buffer[cur_ind + 1] != '\0' && ope(buffer[cur_ind], buffer[cur_ind + 1]) != -1) 
+                if (buffer[cur_ind + 1] != L'\0' && ope(buffer[cur_ind], buffer[cur_ind + 1]) != -1) 
                     break;
                 cur_ind++;
             }
             
             int cur_chr_stat = is_op(buffer[cur_ind]);
-            char saved_o = '\0', saved_c = '\0';
+            wchar_t saved_o = L'\0', saved_c = L'\0';
             if(cur_chr_stat == 1){
                 saved_o = buffer[cur_ind];
-                buffer[cur_ind] = '\0';
-            }else if(buffer[cur_ind] == '\0')
+                buffer[cur_ind] = L'\0';
+            }else if(buffer[cur_ind] == L'\0')
                 {}
-            else if(buffer[cur_ind] == ' '){
-                buffer[cur_ind] = '\0';
+            else if(buffer[cur_ind] == L' '){
+                buffer[cur_ind] = L'\0';
             }else{
                 saved_c = buffer[cur_ind+1];
-                buffer[cur_ind+1] = '\0';
+                buffer[cur_ind+1] = L'\0';
             }
 
             int len = cur_ind - p;
-            char *word = malloc(len + 1);
+            wchar_t *word = malloc(len * sizeof(word[0]));
             if (!word)
                 exit(1);
 
-            memcpy(word, &buffer[p], len);
-            word[len] = '\0';
+            wmemcpy(word, &buffer[p], len); 
+            word[len] = L'\0';
             
             TOKENS[i].tok_word = word;
-            //---
             TOKENS[i].type = TOK_WORD;
             TOKENS[i].op_index = -1;
             i++;
 
-            if(saved_o != '\0')
+            if(saved_o != L'\0')
                 buffer[cur_ind] = saved_o;
-            else if(saved_c != '\0')
+            else if(saved_c != L'\0')
                 buffer[cur_ind+1] = saved_c;
             else
                 {}
-            if(buffer[cur_ind] == ' ' || buffer[cur_ind] == '\0'){
+            if(buffer[cur_ind] == L' ' || buffer[cur_ind] == L'\0'){
                 p = cur_ind;
             }
             else{
@@ -211,7 +207,7 @@ int is_input_good(){
 }
 
 struct command{
-    char *argv[50];
+    wchar_t *argv[50];
     int next_op_idx;
 };
 
@@ -235,91 +231,108 @@ int command_builder(struct command *cmds){
     return cmd_i + 1;;
 }
 
-int inb_echo(char *argv[]) {
+int inb_echo(wchar_t *argv[]) {
     int i = 1;
     while(argv[i] != NULL){
         if(i==1)
-            printf("%s",argv[i]);
+            wprintf(L"%ls",argv[i]);
         else
-            printf(" %s",argv[i]);
+            wprintf(L" %ls",argv[i]);
         i++;
     }
-    printf("\n");
+    wprintf(L"\n");
     return 0;
 }
 
-int inb_pwd(char *argv[]) {
-    int size = GetCurrentDirectory(0, NULL);
-    char *buffer;
+int inb_pwd(wchar_t *argv[]) {
+    int size = GetCurrentDirectoryW(0, NULL);
+    wchar_t *buffer;
     if (size == 0){
-        printf("error");
+        wprintf(L"error");
         return 1;
     }
     else
         buffer = malloc(size);
-    GetCurrentDirectory(size,buffer);
-    printf("%s\n",buffer);
+    GetCurrentDirectoryW(size, buffer);
+    wprintf(L"%ls\n",buffer);
     free(buffer);
     return 0;
 }
 
-int inb_cd(char *argv[]) {
+int inb_cd(wchar_t *argv[]) {
     BOOL x = FALSE;
     if (argv[1]==NULL)
         return inb_pwd(argv);
     else
-        x = SetCurrentDirectory(argv[1]);
+        x = SetCurrentDirectoryW(argv[1]);
     
     if (x)
         return 0;
     else{
-        printf("error\n");
+        wprintf(L"error\n");
         return 1;
     }
 }
 
-int inb_hello(char *argv[]){
-    printf("Hallo! This is Chloe, a custom Windows terminal\n Do help for list of in built functions\n");
+int inb_hello(wchar_t *argv[]){
+    wprintf(L"Hallo! This is Chloe, a custom Windows terminal\n Do help for list of in built functions\n");
     return 0;
 }
 
-int inb_ver(char *argv[]){
-    char cur_ver[] = "v0.1";
-    printf("Chloe-%s\n",cur_ver);
+int inb_ver(wchar_t *argv[]){
+    wchar_t cur_ver[] = L"v0.1";
+    wprintf(L"Chloe-%ls\n",cur_ver);
     return 0;
 }
 
-int inb_help(char *argv[]);
+int inb_help(wchar_t *argv[]);
 
-int inb_exit(char *argv[]){
+int inb_calc(wchar_t *argv[]){
+    int a,b;
+    wchar_t op;
+    while(true){
+        wprintf(L"SImlpe Calc \n Please follow format : num1 op num2\n"); 
+        wscanf(L"%d %lc %d",&a, &op, &b);
+        switch(op){
+            case '+': wprintf(L"\n%d", a+b); break;
+            case '-': wprintf(L"\n%d",a-b);break;
+            case '*': wprintf(L"\n%d", a*b); break;
+            case '/': wprintf(L"\n%d", a/b); break;
+            default: wprintf(L"please enter valid operator\n"); break;
+        }
+    }
+    return 0;
+}
+
+int inb_exit(wchar_t *argv[]){
     return -1;
 }
 
 struct inb{
-    char *name;
-    int (*fn_name)(char *argv[]);
+    wchar_t *name;
+    int (*fn_name)(wchar_t *argv[]);
 };
-struct inb InBUILTS[] = {{"echo", inb_echo}, {"cd", inb_cd}, {"exit",inb_exit}, {"pwd",inb_pwd},{"ver",inb_ver},{"hello",inb_hello},{"help",inb_help}};
+struct inb InBUILTS[] = {{L"echo", inb_echo}, {L"cd", inb_cd}, {L"exit",inb_exit}, {L"pwd",inb_pwd},{L"ver",inb_ver},{L"hello",inb_hello},{L"help",inb_help},{L"calc",inb_calc}};
 
-int inb_help(char *argv[]){
+int inb_help(wchar_t *argv[]){
     int size = sizeof(InBUILTS) / sizeof(InBUILTS[0]);
-    printf("Listing %d in built fucntions\n", size);
+    wprintf(L"Listing %d in built fucntions\n", size);
     for(int i=0; i<size ; i++){
-        printf("%s\n", InBUILTS[i].name);
+        wprintf(L"%ls\n", InBUILTS[i].name);
     }
 }
 
-int in_built_check(char *argv[]){
+int in_built_check(wchar_t *argv[]){
     int count = sizeof(InBUILTS) / sizeof(InBUILTS[0]);
     for(int i=0; i<count;i++){
-        if(strcmp(argv[0],InBUILTS[i].name)==0){
+        if(wcscmp(argv[0],InBUILTS[i].name)==0){
             return InBUILTS[i].fn_name(argv);
         }
     }   
     return 195;
 }
 
-int run_cmd(char *argv[]) {
+int run_cmd(wchar_t *argv[]) {
     int stat = in_built_check(argv);
     if (stat == -1)
         return -1;        
@@ -348,32 +361,19 @@ int executionar(int num_of_commds, struct command *cmds){
     return 0;
 }
 
-int main(void){
-    char gonk[100];
-    char raw_cmd[100];
-    int inp_health, n_o_cmd;
+wchar_t *call_chloe(wchar_t *buff, wchar_t *op_buff){
     struct command cmds[10];
-    while(1){
-        reading(gonk,100);
-        remove_new_line(gonk);
-        strcpy(raw_cmd,gonk);
-        tokenizer(gonk);
-        inp_health =  is_input_good();
-        if(inp_health == -1){
-            printf("syntax error\n");
-            continue;
-        }   
-        else {
-            n_o_cmd = command_builder(cmds);
-            int inb_stat = executionar(n_o_cmd, cmds);
-            free_tokens(); 
-            if(used_tokens < 1)
-                continue;
-            if(inb_stat == -1)
-                break;
-            if(inb_stat == 0){
-                continue;
-            }
-        }
-    }
+    //wprintf(L"wchar_t buff = %ls\n",buff); //D BUG
+
+    tokenizer(buff);
+    //wprintf(L"toks = %ls\n",TOKENS[0].tok_word); //D BUG
+    int x = is_input_good();
+
+    int no_cmds = command_builder(cmds);
+    //wprintf(L"%ls \n", TOKENS[0].tok_word); // D BUG
+
+    int stat = executionar(no_cmds, cmds);
+    free_tokens(); 
+
+    return op_buff;
 }
