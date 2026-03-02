@@ -2,6 +2,8 @@
 
 chloe is my minimal Windows command-line shell written in C, built to learn more about process execution, and command parsing for builtin commands and external commands and more in C.
 
+not just a command-line shell anymore, chloe is a shell engine that will soon run on a win32 UI
+
 Active development happening rn.
 
 ## Motivation
@@ -28,7 +30,12 @@ This project was created to gain a deeper, hands-on understanding of:
 - exit codes in `create_proc`
 - operators `;`,`&&`,`||` all work as intended
 - standardized return codes `0 = success and non zero = failure` 
-- more in built fns `help`, `hello` and `ver`
+- more in built fns `help`, `hello`, `ver` and `calc`
+- made a Win32 window UI 
+- auto clearing input(on Enter press) and scrollable output(with emoticons)
+- chloe to library, removed main and condensed chloe into 1 callable func
+- chloe and UI to UNICODE `W` no ANSI `A`
+- testing.c to test the library 
 
 ## Planned Features
 - Builtin commands
@@ -40,6 +47,7 @@ This project was created to gain a deeper, hands-on understanding of:
 - Better error management
 - Pipes
 - UI using da Win32 API
+  - finishing UI - input - chloe - proc - output - UI pipeling, half is done for now jst need output from chloe into UI
 
 ## Docs
 - Heavily processed implementation notes in `docs` 
@@ -49,3 +57,7 @@ This project was created to gain a deeper, hands-on understanding of:
 
 ## Releases
 - v1.0 : primitive shell, basics only, but it all works
+
+## Notes to Run
+- `gcc -municode ui.c -o ui;./ui` 
+- `gcc Chloe.c testing.c -o test ;./test` change command in test
