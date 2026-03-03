@@ -3,8 +3,8 @@
 #include<string.h>
 #include<stdlib.h>
 #include<stdbool.h>
-#include <unistd.h>
-#include <wchar.h>
+#include<unistd.h>
+#include<wchar.h>
 
 #define OP_SEMI 0
 #define OP_AND  1
@@ -12,7 +12,45 @@
 #define OP_PIPE 3
 #define NOT_A_BUILTIN 195
 
-int create_proc(wchar_t *argv[]){
+struct tok{
+    wchar_t *tok_word;
+    TOK_TYPE type;
+    int op_index; //if tok is not op then op_index = -1
+};
+
+struct tok TOKENS[10];
+int used_tokens;
+
+typedef enum{
+    TOK_WORD,
+    TOK_OPERATOR
+}TOK_TYPE;
+
+struct TOK_OPS{
+    wchar_t *tok_op;
+};
+
+struct inb{
+    wchar_t *name;
+    int (*fn_name)(wchar_t *argv[], struct writing *writ);
+};
+struct writing{
+    wchar_t *buff;
+    size_t cap;
+    size_t pos;
+    bool overflow;
+};
+
+void scribble(wchar_t *buff, struct writing *writ){
+    size_t buff_siz = wcslen(buff);
+    if (writ->pos+buff_siz +1 < writ->cap){
+        wcsncat(writ->buff,buff,buff_siz);
+        writ->pos += buff_siz;
+        writ->buff[writ->pos] = L'\0'; 
+    }
+}
+
+int create_proc(wchar_t *argv[], struct writing *writ){
     DWORD exit_code = 1;
     STARTUPINFOW si;
     ZeroMemory(&si, sizeof(si));
@@ -35,34 +73,16 @@ int create_proc(wchar_t *argv[]){
         CloseHandle(pi.hThread);
     }
     else{
-        wprintf(L"command doesnt exist");
+        scribble(L"command doesnt exist", writ);
     }
     return exit_code;
 }
 
 void remove_new_line(wchar_t *buffer){
-    buffer[wcscspn(buffer,L"\n")] = L'\0';
+    buffer[wcscspn(buffer,L"\r\n")] = L'\0';
 }
 
-struct TOK_OPS{
-    wchar_t *tok_op;
-};
-
 struct TOK_OPS operators[4] = {{L";"}, {L"&&"}, {L"||"}, {L"|"}};
-
-typedef enum{
-    TOK_WORD,
-    TOK_OPERATOR
-}TOK_TYPE;
-
-struct tok{
-    wchar_t *tok_word;
-    TOK_TYPE type;
-    int op_index; //if tok is not op then op_index = -1
-};
-
-struct tok TOKENS[10];
-int used_tokens;
 
 int is_op(wchar_t x){
     for(int i=0 ; i<4 ; i++){
@@ -231,124 +251,142 @@ int command_builder(struct command *cmds){
     return cmd_i + 1;;
 }
 
-int inb_echo(wchar_t *argv[]) {
+int inb_echo(wchar_t *argv[], struct writing *writ) {
     int i = 1;
     while(argv[i] != NULL){
-        if(i==1)
-            wprintf(L"%ls",argv[i]);
-        else
-            wprintf(L" %ls",argv[i]);
+        if(i==1){
+            //wprintf(L"%ls",argv[i]);
+            scribble(argv[i],writ);
+        }else{
+            //wprintf(L" %ls",argv[i]);
+            scribble(L" ", writ);
+            scribble(argv[i],writ);
+        }
         i++;
     }
-    wprintf(L"\n");
+    //wprintf(L"\r\n");
+    scribble(L"\r\n", writ);
     return 0;
 }
 
-int inb_pwd(wchar_t *argv[]) {
+int inb_pwd(wchar_t *argv[], struct writing *writ) {
     int size = GetCurrentDirectoryW(0, NULL);
     wchar_t *buffer;
     if (size == 0){
-        wprintf(L"error");
+        //wprintf(L"error");
+        scribble(L"pwd Error", writ);
         return 1;
     }
     else
         buffer = malloc(size);
     GetCurrentDirectoryW(size, buffer);
-    wprintf(L"%ls\n",buffer);
+    //wprintf(L"%ls\r\n",buffer);
+    scribble(buffer,writ);
+    scribble(L"\r\n", writ);
     free(buffer);
     return 0;
 }
 
-int inb_cd(wchar_t *argv[]) {
+int inb_cd(wchar_t *argv[], struct writing *writ){
     BOOL x = FALSE;
-    if (argv[1]==NULL)
-        return inb_pwd(argv);
-    else
+    if (argv[1]==NULL){
+        //wprintf(L"\r\nGOING TO PWD\r\n");//D BUG
+        return inb_pwd(argv, writ);
+    }else{
         x = SetCurrentDirectoryW(argv[1]);
-    
-    if (x)
+        //wprintf(L"\r\nAfter SETCURDIR setting X to tru or false\r\n");
+    }
+    if (x){
+        //wprintf(L"\r\nIt thinks X is true\r\n");
         return 0;
+    }    
     else{
-        wprintf(L"error\n");
+        //wprintf(L"error\r\n");
+        scribble(L"error\r\n", writ);
         return 1;
     }
 }
 
-int inb_hello(wchar_t *argv[]){
-    wprintf(L"Hallo! This is Chloe, a custom Windows terminal\n Do help for list of in built functions\n");
+int inb_hello(wchar_t *argv[], struct writing *writ){
+    scribble(L"Hallo! This is Chloe, a custom Windows terminal\r\n Do help for list of in built functions\r\n", writ);
     return 0;
 }
 
-int inb_ver(wchar_t *argv[]){
+int inb_ver(wchar_t *argv[], struct writing *writ){
     wchar_t cur_ver[] = L"v0.1";
-    wprintf(L"Chloe-%ls\n",cur_ver);
+    scribble(L"Chloe-",writ);
+    scribble(cur_ver,writ);
+    scribble(L"\r\n",writ);
     return 0;
 }
 
-int inb_help(wchar_t *argv[]);
+int inb_help(wchar_t *argv[], struct writing *writ);
 
+// Excluded from the inbuilts for now, will make it wokr later, wont be forgotten
 int inb_calc(wchar_t *argv[]){
     int a,b;
     wchar_t op;
     while(true){
-        wprintf(L"SImlpe Calc \n Please follow format : num1 op num2\n"); 
+        wprintf(L"SImlpe Calc \r\n Please follow format : num1 op num2\r\n"); 
         wscanf(L"%d %lc %d",&a, &op, &b);
         switch(op){
-            case '+': wprintf(L"\n%d", a+b); break;
-            case '-': wprintf(L"\n%d",a-b);break;
-            case '*': wprintf(L"\n%d", a*b); break;
-            case '/': wprintf(L"\n%d", a/b); break;
-            default: wprintf(L"please enter valid operator\n"); break;
+            case '+': wprintf(L"\r\n%d", a+b); break;
+            case '-': wprintf(L"\r\n%d",a-b);break;
+            case '*': wprintf(L"\r\n%d", a*b); break;
+            case '/': wprintf(L"\r\n%d", a/b); break;
+            default: wprintf(L"please enter valid operator\r\n"); break;
         }
     }
     return 0;
 }
 
-int inb_exit(wchar_t *argv[]){
+int inb_exit(wchar_t *argv[], struct writing *writ){
     return -1;
 }
 
-struct inb{
-    wchar_t *name;
-    int (*fn_name)(wchar_t *argv[]);
-};
-struct inb InBUILTS[] = {{L"echo", inb_echo}, {L"cd", inb_cd}, {L"exit",inb_exit}, {L"pwd",inb_pwd},{L"ver",inb_ver},{L"hello",inb_hello},{L"help",inb_help},{L"calc",inb_calc}};
+struct inb InBUILTS[] = {{L"echo", inb_echo}, {L"cd", inb_cd}, {L"pwd",inb_pwd}, {L"exit",inb_exit}, {L"ver",inb_ver}, {L"hello",inb_hello}, {L"help",inb_help}};
 
-int inb_help(wchar_t *argv[]){
+int inb_help(wchar_t *argv[], struct writing *writ){
     int size = sizeof(InBUILTS) / sizeof(InBUILTS[0]);
-    wprintf(L"Listing %d in built fucntions\n", size);
+    wchar_t num[20];
+    _itow_s(size, num, _countof(num), 10);
+    scribble(L"Listing ", writ);
+    scribble(num, writ);
+    scribble(L" in built funcs\r\n", writ);
+
+    //wprintf(L"Listing %d in built fucntions\r\n", size);
     for(int i=0; i<size ; i++){
-        wprintf(L"%ls\n", InBUILTS[i].name);
+        //wprintf(L"%ls\r\n", InBUILTS[i].name);
+        scribble(InBUILTS[i].name, writ);
+        scribble(L"\r\n",writ);
     }
 }
 
-int in_built_check(wchar_t *argv[]){
+int in_built_check(wchar_t *argv[], struct writing *writ){
     int count = sizeof(InBUILTS) / sizeof(InBUILTS[0]);
     for(int i=0; i<count;i++){
         if(wcscmp(argv[0],InBUILTS[i].name)==0){
-            return InBUILTS[i].fn_name(argv);
+            return InBUILTS[i].fn_name(argv, writ);
         }
     }   
     return 195;
 }
 
-int run_cmd(wchar_t *argv[]) {
-    int stat = in_built_check(argv);
+int run_cmd(wchar_t *argv[], struct writing *writ) {
+    int stat = in_built_check(argv, writ);
     if (stat == -1)
         return -1;        
     if (stat != NOT_A_BUILTIN)
         return stat;        
-
-    return create_proc(argv); 
+    return create_proc(argv, writ); 
 }
 
-int executionar(int num_of_commds, struct command *cmds){
+int executionar(int num_of_commds, struct command *cmds, struct writing *writ){
     int stat;
     for(int i=0; i<num_of_commds; i++){
-        stat = run_cmd(cmds[i].argv);
+        stat = run_cmd(cmds[i].argv, writ);
         if(stat == -1)
             return -1;
-
         if(cmds[i].next_op_idx == -1)
             continue;
         if(cmds[i].next_op_idx == OP_SEMI)
@@ -361,19 +399,24 @@ int executionar(int num_of_commds, struct command *cmds){
     return 0;
 }
 
-wchar_t *call_chloe(wchar_t *buff, wchar_t *op_buff){
+wchar_t *call_chloe(wchar_t *buff, wchar_t *op_buff, size_t cap){
     struct command cmds[10];
-    //wprintf(L"wchar_t buff = %ls\n",buff); //D BUG
-
+    //wprintf(L"wchar_t buff = %ls\r\n",buff); //D BUG
+    
+    struct writing writ;
+    writ.buff = op_buff;
+    writ.buff[0] = L'\0';
+    writ.cap = cap;
+    writ.pos = 0;
+    writ.overflow = false;
+    
     tokenizer(buff);
-    //wprintf(L"toks = %ls\n",TOKENS[0].tok_word); //D BUG
+    //wprintf(L"1st tok = %ls\r\n",TOKENS[0].tok_word); //D BUG
+
     int x = is_input_good();
-
     int no_cmds = command_builder(cmds);
-    //wprintf(L"%ls \n", TOKENS[0].tok_word); // D BUG
-
-    int stat = executionar(no_cmds, cmds);
+    int stat = executionar(no_cmds, cmds, &writ);
     free_tokens(); 
 
-    return op_buff;
+    return writ.buff;
 }

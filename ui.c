@@ -42,19 +42,23 @@ void append_txt(HWND hwndEdit, const wchar_t *text){
 LRESULT CALLBACK InpProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 {
     if (msg == WM_CHAR && wparam == '\r'){
-        wchar_t buff[1024];
-        GetWindowTextW(hwnd, buff, 1024);
+        wchar_t buff[3072];
+        GetWindowTextW(hwnd, buff, 3072);
         SetWindowTextW(hwnd, L"");
         
         // Chloe conn 
-        //wchar_t *op[1024] = call_chloe(buff,op);
-        
+        size_t cap = 3072;
+        wchar_t op[3072];
+        op[0] = L'\0';
+        call_chloe(buff,op,cap);
         
         int len = GetWindowTextLengthW(hwndOutput);
         SendMessageW(hwndOutput, EM_SETSEL, len, len);
         append_txt(hwndOutput,L"(づ￣ ³￣)づ ");
-        SendMessageW(hwndOutput, EM_REPLACESEL, 0, (LPARAM)buff); //change buff to op after chloe conn
+        SendMessageW(hwndOutput, EM_REPLACESEL, 0, (LPARAM)buff);
         SendMessageW(hwndOutput, EM_REPLACESEL, 0, (LPARAM)L"\r\n");
+        SendMessageW(hwndOutput, EM_REPLACESEL, 0, (LPARAM)op);
+        
         SendMessageW(hwndOutput, EM_SCROLLCARET, 0, 0);
         return 0;
     }

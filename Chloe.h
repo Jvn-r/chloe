@@ -3,6 +3,6 @@
 #include <windows.h>
 #include <stdio.h>
 
-wchar_t *call_chloe(wchar_t *buff, wchar_t *op_buff);
+wchar_t *call_chloe(wchar_t *buff, wchar_t *op_buff, size_t capacity);
 
 #endif 
