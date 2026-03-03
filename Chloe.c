@@ -74,7 +74,7 @@ int create_proc(wchar_t *argv[], struct writing *writ){
         CloseHandle(pi.hThread);
     }
     else{
-        scribble(L"command doesnt exist", writ);
+        scribble(L"command doesnt exist\r\n", writ);
     }
     return exit_code;
 }
@@ -120,7 +120,7 @@ void tokenizer(wchar_t *buffer){
     int i = 0, cur_ind, x;
     size_t sze = wcslen(buffer);
 
-    for(int p = 0 ; p < sze ; p++){
+    for(size_t p = 0 ; p < sze ; p++){
         cur_char = buffer[p];
 
         if(cur_char == L'\0')
@@ -209,21 +209,25 @@ void free_tokens() {
     }
 }
 
-int is_input_good(){
+int is_input_good(struct writing *writ){
     if(used_tokens == 0)
         return 0;
 
-    if(TOKENS[0].type == TOK_OPERATOR)
+    if(TOKENS[0].type == TOK_OPERATOR){
+        scribble(L"SYNTAX ERROR", writ);
         return -1;
-    
-    if(TOKENS[used_tokens-1].type == TOK_OPERATOR)
-        return -1;
-
-    for (int i = 0; i < used_tokens - 1; i++) {
-        if (TOKENS[i].type == TOK_OPERATOR && TOKENS[i + 1].type == TOK_OPERATOR)
-            return -1;
     }
-
+    
+    if(TOKENS[used_tokens-1].type == TOK_OPERATOR){
+        scribble(L"SYNTAX ERROR", writ);
+        return -1;
+    }
+    for (int i = 0; i < used_tokens - 1; i++) {
+        if (TOKENS[i].type == TOK_OPERATOR && TOKENS[i + 1].type == TOK_OPERATOR){
+            scribble(L"SYNTAX ERROR", writ);
+            return -1;
+        }
+    }
     return 1;
 }
 
@@ -314,7 +318,7 @@ int inb_hello(wchar_t *argv[], struct writing *writ){
 }
 
 int inb_ver(wchar_t *argv[], struct writing *writ){
-    wchar_t cur_ver[] = L"v0.1";
+    wchar_t cur_ver[] = L"v0.1.1-alpha";
     scribble(L"Chloe-",writ);
     scribble(cur_ver,writ);
     scribble(L"\r\n",writ);
@@ -415,10 +419,14 @@ wchar_t *call_chloe(wchar_t *buff, wchar_t *op_buff, size_t cap){
     tokenizer(buff);
     //wprintf(L"1st tok = %ls\r\n",TOKENS[0].tok_word); //D BUG
 
-    int x = is_input_good();
-    int no_cmds = command_builder(cmds);
-    int stat = executionar(no_cmds, cmds, &writ);
-    free_tokens(); 
-
-    return writ.buff;
+    int inp_stat = is_input_good(&writ);
+    if(inp_stat == -1){
+        return writ.buff;
+    }
+    else{
+        int no_cmds = command_builder(cmds);
+        executionar(no_cmds, cmds, &writ);
+        free_tokens(); 
+        return writ.buff;
+    }
 }
