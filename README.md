@@ -2,7 +2,7 @@
 
 chloe is my minimal Windows command-line shell written in C, built to learn more about process execution, and command parsing for builtin commands and external commands and more in C.
 
-not just a command-line shell anymore, chloe is a shell engine that will soon run on a win32 UI
+not just a command-line shell anymore, chloe is a shell engine that runs on a WIN32 UI.
 
 Active development happening rn.
 
@@ -12,6 +12,7 @@ This project was created to gain a deeper, hands-on understanding of:
 - Command parsing and tokenization 
 - Pointer and memory semantics in C
 - How real shells interact with the operating system in WIndows
+- Win32 UI in C
 
 ## Current Features
 - Taking user input using `fgets` and handling newline char left behind by `fgets`
@@ -36,6 +37,10 @@ This project was created to gain a deeper, hands-on understanding of:
 - chloe to library, removed main and condensed chloe into 1 callable func
 - chloe and UI to UNICODE `W` no ANSI `A`
 - testing.c to test the library 
+- removed every `stdin` and `stdout` to terminal from `chloe.c`
+- chloe talks only to ui.c or any others who call upon her using the `call_chloe` func
+- `scribble` func to write into output buffer
+- fully connected UI and Library
 
 ## Planned Features
 - Builtin commands
@@ -47,17 +52,18 @@ This project was created to gain a deeper, hands-on understanding of:
 - Better error management
 - Pipes
 - UI using da Win32 API
-  - finishing UI - input - chloe - proc - output - UI pipeling, half is done for now jst need output from chloe into UI
+  - `DONE` - finishing UI - input - chloe - proc - output - UI pipeling, half is done for now jst need output from chloe into UI - `DONE`
 
 ## Docs
 - Heavily processed implementation notes in `docs` 
 
 ## BUGS
 - FIXED : `echo hello;pwd` will not work, `echo hello ;pwd` or anything with a space behind the operator works, will fix it in the near future
+- `calc` in built function not updated, will do later
 
 ## Releases
 - v1.0 : primitive shell, basics only, but it all works
 
 ## Notes to Run
-- `gcc -municode ui.c -o ui;./ui` 
+- `gcc -municode Chloe.c ui.c -o ui ;./ui` - chloe + ui RAHHHHH
 - `gcc Chloe.c testing.c -o test ;./test` change command in test
