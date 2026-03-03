@@ -12,6 +12,11 @@
 #define OP_PIPE 3
 #define NOT_A_BUILTIN 195
 
+typedef enum{
+    TOK_WORD,
+    TOK_OPERATOR
+}TOK_TYPE;
+
 struct tok{
     wchar_t *tok_word;
     TOK_TYPE type;
@@ -21,18 +26,9 @@ struct tok{
 struct tok TOKENS[10];
 int used_tokens;
 
-typedef enum{
-    TOK_WORD,
-    TOK_OPERATOR
-}TOK_TYPE;
 
 struct TOK_OPS{
     wchar_t *tok_op;
-};
-
-struct inb{
-    wchar_t *name;
-    int (*fn_name)(wchar_t *argv[], struct writing *writ);
 };
 struct writing{
     wchar_t *buff;
@@ -40,10 +36,15 @@ struct writing{
     size_t pos;
     bool overflow;
 };
+struct inb{
+    wchar_t *name;
+    int (*fn_name)(wchar_t *argv[], struct writing *writ);
+};
+
 
 void scribble(wchar_t *buff, struct writing *writ){
     size_t buff_siz = wcslen(buff);
-    if (writ->pos+buff_siz +1 < writ->cap){
+    if (writ->pos+buff_siz +1 <= writ->cap){
         wcsncat(writ->buff,buff,buff_siz);
         writ->pos += buff_siz;
         writ->buff[writ->pos] = L'\0'; 
@@ -360,6 +361,7 @@ int inb_help(wchar_t *argv[], struct writing *writ){
         scribble(InBUILTS[i].name, writ);
         scribble(L"\r\n",writ);
     }
+    return 0;
 }
 
 int in_built_check(wchar_t *argv[], struct writing *writ){
