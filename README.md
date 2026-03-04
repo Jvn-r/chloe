@@ -1,18 +1,18 @@
 # chloe
 
-chloe is my minimal Windows command-line shell written in C, built to learn more about process execution, and command parsing for builtin commands and external commands and more in C.
+chloe is my minimal Windows command-line shell written in C, built to learn more about process execution, and command parsing for builtin and external commands and all of it in C
 
-not just a command-line shell anymore, chloe is a shell engine that runs on a WIN32 UI.
+not just a command-line shell anymore, chloe is a shell engine that runs on a WIN32 UI
 
 Active development happening rn.
 
 ## Motivation
-This project was created to gain a deeper, hands-on understanding of:
-- Windows process creation and termination lifecycle
+Made for learnin:
+- Windows process lifecycle
 - Command parsing and tokenization 
 - Pointer and memory semantics in C
-- How real shells interact with the operating system in WIndows
-- Win32 UI in C
+- Shell Interaction with Windows
+- Win32 UI 
 
 ## Current Features
 - Taking user input using `fgets` and handling newline char left behind by `fgets`
@@ -48,7 +48,11 @@ This project was created to gain a deeper, hands-on understanding of:
   - cd
   - pwd
   - echo
-- Command Chaining
+  - help 
+  - hello
+  - ver
+  - calc `NOT workin as of latest push`
+- Command Chaining - `DONE`
 - Better error management
 - Pipes
 - UI using da Win32 API
@@ -59,7 +63,7 @@ This project was created to gain a deeper, hands-on understanding of:
 
 ## BUGS
 - FIXED : `echo hello;pwd` will not work, `echo hello ;pwd` or anything with a space behind the operator works, will fix it in the near future
-- `calc` in built function not updated, will do later
+- `calc` in built function not updated, will do later, slipped my mind now its too late, ill do it later, promise
 
 ## Releases
 - v1.0 : primitive shell, basics only, but it all works

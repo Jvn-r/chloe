@@ -3,7 +3,6 @@
 #include<string.h>
 #include<stdlib.h>
 #include<stdbool.h>
-#include<unistd.h>
 #include<wchar.h>
 
 #define OP_SEMI 0
@@ -11,6 +10,7 @@
 #define OP_OR   2
 #define OP_PIPE 3
 #define NOT_A_BUILTIN 195
+#define CHLOE_VERSION L"0.1.1-alpha"
 
 typedef enum{
     TOK_WORD,
@@ -23,9 +23,8 @@ struct tok{
     int op_index; //if tok is not op then op_index = -1
 };
 
-struct tok TOKENS[10];
+struct tok TOKENS[64];
 int used_tokens;
-
 
 struct TOK_OPS{
     wchar_t *tok_op;
@@ -40,7 +39,10 @@ struct inb{
     wchar_t *name;
     int (*fn_name)(wchar_t *argv[], struct writing *writ);
 };
-
+struct command{
+    wchar_t *argv[50];
+    int next_op_idx;
+};
 
 void scribble(wchar_t *buff, struct writing *writ){
     size_t buff_siz = wcslen(buff);
@@ -48,6 +50,9 @@ void scribble(wchar_t *buff, struct writing *writ){
         wcsncat(writ->buff,buff,buff_siz);
         writ->pos += buff_siz;
         writ->buff[writ->pos] = L'\0'; 
+    }
+    else{
+        writ->overflow = true; // will make this impact the lore later
     }
 }
 
@@ -74,6 +79,10 @@ int create_proc(wchar_t *argv[], struct writing *writ){
         CloseHandle(pi.hThread);
     }
     else{
+        if (exit_code!=0){
+            scribble(L"Create Process exited with exit code : ",writ);
+            swprintf(writ->buff + writ->pos, writ->cap, L"%lu\r\n", (unsigned long)exit_code);
+        }
         scribble(L"command doesnt exist\r\n", writ);
     }
     return exit_code;
@@ -122,10 +131,10 @@ void tokenizer(wchar_t *buffer){
 
     for(size_t p = 0 ; p < sze ; p++){
         cur_char = buffer[p];
-
+        
         if(cur_char == L'\0')
             break;
-
+        
         if(buffer[p+1] != L'\0')
             next_char = buffer[p+1];
         else 
@@ -171,7 +180,7 @@ void tokenizer(wchar_t *buffer){
             }
 
             int len = cur_ind - p;
-            wchar_t *word = malloc(len * sizeof(word[0]));
+            wchar_t *word = malloc((len+1) * sizeof(word[0]));
             if (!word)
                 exit(1);
 
@@ -214,36 +223,31 @@ int is_input_good(struct writing *writ){
         return 0;
 
     if(TOKENS[0].type == TOK_OPERATOR){
-        scribble(L"SYNTAX ERROR", writ);
+        scribble(L"SYNTAX ERROR\r\n", writ);
         return -1;
     }
     
     if(TOKENS[used_tokens-1].type == TOK_OPERATOR){
-        scribble(L"SYNTAX ERROR", writ);
+        scribble(L"SYNTAX ERROR\r\n", writ);
         return -1;
     }
     for (int i = 0; i < used_tokens - 1; i++) {
         if (TOKENS[i].type == TOK_OPERATOR && TOKENS[i + 1].type == TOK_OPERATOR){
-            scribble(L"SYNTAX ERROR", writ);
+            scribble(L"SYNTAX ERROR\r\n", writ);
             return -1;
         }
     }
     return 1;
 }
 
-struct command{
-    wchar_t *argv[50];
-    int next_op_idx;
-};
-
 int command_builder(struct command *cmds){
     int cmd_i = 0;
     int argv_j = 0;
 
     for(int i = 0; i<used_tokens; i++){
-        if(TOKENS[i].type == TOK_WORD){
+        if(TOKENS[i].type == TOK_WORD)
             cmds[cmd_i].argv[argv_j++] = TOKENS[i].tok_word;
-        }
+
         if(TOKENS[i].type == TOK_OPERATOR){
             cmds[cmd_i].argv[argv_j] = NULL;
             cmds[cmd_i].next_op_idx = TOKENS[i].op_index;
@@ -259,17 +263,14 @@ int command_builder(struct command *cmds){
 int inb_echo(wchar_t *argv[], struct writing *writ) {
     int i = 1;
     while(argv[i] != NULL){
-        if(i==1){
-            //wprintf(L"%ls",argv[i]);
+        if(i==1)
             scribble(argv[i],writ);
-        }else{
-            //wprintf(L" %ls",argv[i]);
+        else{
             scribble(L" ", writ);
             scribble(argv[i],writ);
         }
         i++;
     }
-    //wprintf(L"\r\n");
     scribble(L"\r\n", writ);
     return 0;
 }
@@ -278,14 +279,12 @@ int inb_pwd(wchar_t *argv[], struct writing *writ) {
     int size = GetCurrentDirectoryW(0, NULL);
     wchar_t *buffer;
     if (size == 0){
-        //wprintf(L"error");
-        scribble(L"pwd Error", writ);
+        scribble(L"pwd Error\r\n", writ);
         return 1;
     }
     else
         buffer = malloc(size);
     GetCurrentDirectoryW(size, buffer);
-    //wprintf(L"%ls\r\n",buffer);
     scribble(buffer,writ);
     scribble(L"\r\n", writ);
     free(buffer);
@@ -294,40 +293,33 @@ int inb_pwd(wchar_t *argv[], struct writing *writ) {
 
 int inb_cd(wchar_t *argv[], struct writing *writ){
     BOOL x = FALSE;
-    if (argv[1]==NULL){
-        //wprintf(L"\r\nGOING TO PWD\r\n");//D BUG
+    if (argv[1]==NULL)
         return inb_pwd(argv, writ);
-    }else{
+    else
         x = SetCurrentDirectoryW(argv[1]);
-        //wprintf(L"\r\nAfter SETCURDIR setting X to tru or false\r\n");
-    }
-    if (x){
-        //wprintf(L"\r\nIt thinks X is true\r\n");
-        return 0;
-    }    
+    if (x)
+        return 0; 
     else{
-        //wprintf(L"error\r\n");
         scribble(L"error\r\n", writ);
         return 1;
     }
 }
 
 int inb_hello(wchar_t *argv[], struct writing *writ){
-    scribble(L"Hallo! This is Chloe, a custom Windows terminal\r\n Do help for list of in built functions\r\n", writ);
+    scribble(L"Hallo! This is Chloe, a custom Windows shell running on a simple Win32 UI\r\n Do help for list of in built functions\r\n", writ);
     return 0;
 }
 
 int inb_ver(wchar_t *argv[], struct writing *writ){
-    wchar_t cur_ver[] = L"v0.1.1-alpha";
     scribble(L"Chloe-",writ);
-    scribble(cur_ver,writ);
+    scribble(CHLOE_VERSION,writ);
     scribble(L"\r\n",writ);
     return 0;
 }
 
 int inb_help(wchar_t *argv[], struct writing *writ);
 
-// Excluded from the inbuilts for now, will make it wokr later, wont be forgotten
+// calc is excluded from the inbuilts for now, will make it wokr later, wont be forgotten
 int inb_calc(wchar_t *argv[]){
     int a,b;
     wchar_t op;
@@ -346,6 +338,7 @@ int inb_calc(wchar_t *argv[]){
 }
 
 int inb_exit(wchar_t *argv[], struct writing *writ){
+    scribble(L"exiting...", writ);
     return -1;
 }
 
@@ -354,14 +347,14 @@ struct inb InBUILTS[] = {{L"echo", inb_echo}, {L"cd", inb_cd}, {L"pwd",inb_pwd},
 int inb_help(wchar_t *argv[], struct writing *writ){
     int size = sizeof(InBUILTS) / sizeof(InBUILTS[0]);
     wchar_t num[20];
-    _itow_s(size, num, _countof(num), 10);
+
+    _itow_s(size, num, _countof(num), 10); // int to size_t cast
+
     scribble(L"Listing ", writ);
     scribble(num, writ);
     scribble(L" in built funcs\r\n", writ);
 
-    //wprintf(L"Listing %d in built fucntions\r\n", size);
     for(int i=0; i<size ; i++){
-        //wprintf(L"%ls\r\n", InBUILTS[i].name);
         scribble(InBUILTS[i].name, writ);
         scribble(L"\r\n",writ);
     }
@@ -407,7 +400,6 @@ int executionar(int num_of_commds, struct command *cmds, struct writing *writ){
 
 wchar_t *call_chloe(wchar_t *buff, wchar_t *op_buff, size_t cap){
     struct command cmds[10];
-    //wprintf(L"wchar_t buff = %ls\r\n",buff); //D BUG
     
     struct writing writ;
     writ.buff = op_buff;
@@ -417,7 +409,6 @@ wchar_t *call_chloe(wchar_t *buff, wchar_t *op_buff, size_t cap){
     writ.overflow = false;
     
     tokenizer(buff);
-    //wprintf(L"1st tok = %ls\r\n",TOKENS[0].tok_word); //D BUG
 
     int inp_stat = is_input_good(&writ);
     if(inp_stat == -1){
@@ -425,7 +416,10 @@ wchar_t *call_chloe(wchar_t *buff, wchar_t *op_buff, size_t cap){
     }
     else{
         int no_cmds = command_builder(cmds);
-        executionar(no_cmds, cmds, &writ);
+        int stat = executionar(no_cmds, cmds, &writ);
+        if (stat == -1){
+            exit(0); 
+        }
         free_tokens(); 
         return writ.buff;
     }
