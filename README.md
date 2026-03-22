@@ -70,5 +70,5 @@ Made for learnin:
 - v1.0 : primitive shell, basics only, but it all works
 
 ## Notes to Run
-- `gcc -municode Chloe.c ui.c -o ui ;./ui` - chloe + ui RAHHHHH
+- `gcc -municode Chloe.c in_built.c ui.c -o ui ; ./ui` - chloe + ui RAHHHHH
 - `gcc Chloe.c testing.c -o test ;./test` change command in test
