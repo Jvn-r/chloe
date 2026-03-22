@@ -4,45 +4,11 @@
 #include<stdlib.h>
 #include<stdbool.h>
 #include<wchar.h>
-
-#define OP_SEMI 0
-#define OP_AND  1
-#define OP_OR   2
-#define OP_PIPE 3
-#define NOT_A_BUILTIN 195
-#define CHLOE_VERSION L"0.1.1-alpha"
-
-typedef enum{
-    TOK_WORD,
-    TOK_OPERATOR
-}TOK_TYPE;
-
-struct tok{
-    wchar_t *tok_word;
-    TOK_TYPE type;
-    int op_index; //if tok is not op then op_index = -1
-};
+#include "in_built.h"
+#include "Chloe.h"
 
 struct tok TOKENS[64];
 int used_tokens;
-
-struct TOK_OPS{
-    wchar_t *tok_op;
-};
-struct writing{
-    wchar_t *buff;
-    size_t cap;
-    size_t pos;
-    bool overflow;
-};
-struct inb{
-    wchar_t *name;
-    int (*fn_name)(wchar_t *argv[], struct writing *writ);
-};
-struct command{
-    wchar_t *argv[50];
-    int next_op_idx;
-};
 
 void scribble(wchar_t *buff, struct writing *writ){
     size_t buff_siz = wcslen(buff);
@@ -83,7 +49,7 @@ int create_proc(wchar_t *argv[], struct writing *writ){
             scribble(L"Create Process exited with exit code : ",writ);
             swprintf(writ->buff + writ->pos, writ->cap, L"%lu\r\n", (unsigned long)exit_code);
         }
-        scribble(L"command doesnt exist\r\n", writ);
+        scribble(L"command doesnt exist \r\n", writ);
     }
     return exit_code;
 }
@@ -125,7 +91,7 @@ void tokenizer(wchar_t *buffer){
         TOKENS[i].op_index = -1;
     }
     used_tokens = 0;
-    char cur_char, next_char;
+    wchar_t cur_char, next_char;
     int i = 0, cur_ind, x;
     size_t sze = wcslen(buffer);
 
@@ -260,117 +226,6 @@ int command_builder(struct command *cmds){
     return cmd_i + 1;;
 }
 
-int inb_echo(wchar_t *argv[], struct writing *writ) {
-    int i = 1;
-    while(argv[i] != NULL){
-        if(i==1)
-            scribble(argv[i],writ);
-        else{
-            scribble(L" ", writ);
-            scribble(argv[i],writ);
-        }
-        i++;
-    }
-    scribble(L"\r\n", writ);
-    return 0;
-}
-
-int inb_pwd(wchar_t *argv[], struct writing *writ) {
-    int size = GetCurrentDirectoryW(0, NULL);
-    wchar_t *buffer;
-    if (size == 0){
-        scribble(L"pwd Error\r\n", writ);
-        return 1;
-    }
-    else
-        buffer = malloc(size);
-    GetCurrentDirectoryW(size, buffer);
-    scribble(buffer,writ);
-    scribble(L"\r\n", writ);
-    free(buffer);
-    return 0;
-}
-
-int inb_cd(wchar_t *argv[], struct writing *writ){
-    BOOL x = FALSE;
-    if (argv[1]==NULL)
-        return inb_pwd(argv, writ);
-    else
-        x = SetCurrentDirectoryW(argv[1]);
-    if (x)
-        return 0; 
-    else{
-        scribble(L"error\r\n", writ);
-        return 1;
-    }
-}
-
-int inb_hello(wchar_t *argv[], struct writing *writ){
-    scribble(L"Hallo! This is Chloe, a custom Windows shell running on a simple Win32 UI\r\n Do help for list of in built functions\r\n", writ);
-    return 0;
-}
-
-int inb_ver(wchar_t *argv[], struct writing *writ){
-    scribble(L"Chloe-",writ);
-    scribble(CHLOE_VERSION,writ);
-    scribble(L"\r\n",writ);
-    return 0;
-}
-
-int inb_help(wchar_t *argv[], struct writing *writ);
-
-// calc is excluded from the inbuilts for now, will make it wokr later, wont be forgotten
-int inb_calc(wchar_t *argv[]){
-    int a,b;
-    wchar_t op;
-    while(true){
-        wprintf(L"SImlpe Calc \r\n Please follow format : num1 op num2\r\n"); 
-        wscanf(L"%d %lc %d",&a, &op, &b);
-        switch(op){
-            case '+': wprintf(L"\r\n%d", a+b); break;
-            case '-': wprintf(L"\r\n%d",a-b);break;
-            case '*': wprintf(L"\r\n%d", a*b); break;
-            case '/': wprintf(L"\r\n%d", a/b); break;
-            default: wprintf(L"please enter valid operator\r\n"); break;
-        }
-    }
-    return 0;
-}
-
-int inb_exit(wchar_t *argv[], struct writing *writ){
-    scribble(L"exiting...", writ);
-    return -1;
-}
-
-struct inb InBUILTS[] = {{L"echo", inb_echo}, {L"cd", inb_cd}, {L"pwd",inb_pwd}, {L"exit",inb_exit}, {L"ver",inb_ver}, {L"hello",inb_hello}, {L"help",inb_help}};
-
-int inb_help(wchar_t *argv[], struct writing *writ){
-    int size = sizeof(InBUILTS) / sizeof(InBUILTS[0]);
-    wchar_t num[20];
-
-    _itow_s(size, num, _countof(num), 10); // int to size_t cast
-
-    scribble(L"Listing ", writ);
-    scribble(num, writ);
-    scribble(L" in built funcs\r\n", writ);
-
-    for(int i=0; i<size ; i++){
-        scribble(InBUILTS[i].name, writ);
-        scribble(L"\r\n",writ);
-    }
-    return 0;
-}
-
-int in_built_check(wchar_t *argv[], struct writing *writ){
-    int count = sizeof(InBUILTS) / sizeof(InBUILTS[0]);
-    for(int i=0; i<count;i++){
-        if(wcscmp(argv[0],InBUILTS[i].name)==0){
-            return InBUILTS[i].fn_name(argv, writ);
-        }
-    }   
-    return 195;
-}
-
 int run_cmd(wchar_t *argv[], struct writing *writ) {
     int stat = in_built_check(argv, writ);
     if (stat == -1)
@@ -418,6 +273,7 @@ wchar_t *call_chloe(wchar_t *buff, wchar_t *op_buff, size_t cap){
         int no_cmds = command_builder(cmds);
         int stat = executionar(no_cmds, cmds, &writ);
         if (stat == -1){
+            free_tokens();
             exit(0); 
         }
         free_tokens(); 

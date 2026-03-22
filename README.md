@@ -41,6 +41,7 @@ Made for learnin:
 - chloe talks only to ui.c or any others who call upon her using the `call_chloe` func
 - `scribble` func to write into output buffer
 - fully connected UI and Library
+- reorganized code to reduce clutter and separate the in built functions into their own library
 
 ## Planned Features
 - Builtin commands
